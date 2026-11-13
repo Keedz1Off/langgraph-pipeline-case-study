@@ -1,10 +1,16 @@
-# LangGraph — пайплайн проверок
+# LangGraph integration testing case study
 
-**Начни с [полного разбора пайплайна](PIPELINE.md).** Там показано, как выбрать правило, написать тест на Python, проверить саму проверку и сохранить результат.
+A local case study in testing a LangGraph application's access controls, approval gates, and recovery behavior. The application used synthetic users and SQLite records as stand-ins for real tool actions.
 
-- [Case study на примере LangGraph](CASE-STUDY.md) — два теста с намеренно неправильными данными и три расхождения, найденные в тестовом приложении.
-- [Матрица проверок](MATRIX.md) — все 22 свойства, которые покрывает набор тестов.
+**Start with [the testing pipeline](PIPELINE.md).** It follows one rule from the test matrix through the pytest assertion and the final report.
 
-В проверенном локальном прогоне от 24 октября 2026 года **70 из 73 тестовых случаев прошли**. Три упавшие проверки показали расхождения в логике тестового приложения. В стенде использовались синтетические пользователи и SQLite. Тестовые действия записывались в базу.
+## Reading order
 
-В портфолио также есть отдельный кейс **Learn with GenAI** о закрытии ресурсов после ответа чата. Его результат **9 из 9** относится к проверкам локального исправления другого приложения. [Разбор Learn with GenAI](https://github.com/Keedz1Off/learn-with-genai-resource-lifecycle-case-study)
+1. [Pipeline](PIPELINE.md) explains the application boundaries, test design, observations, and reporting.
+2. [Case study](CASE-STUDY.md) shows how an intentionally wrong fixture checks the assertion and what three failed application checks revealed.
+3. [Test matrix](MATRIX.md) lists 22 properties and their outcomes. Start with B09 for the worked example and B18, B20, and B21 for the failed checks.
+4. [Recorded results](evidence/results.json) contains the run counts and the individual outcomes cited in the case study.
+
+## Results
+
+The local run on October 24, 2026 produced **70 passes and 3 failures across 73 cases**. A separate repeat of nine cases produced **6 passes and the same 3 failures**. All three failures concern consistency in the synthetic application built around LangGraph. This repository documents the experiment and includes an extract of the recorded results.

@@ -1,30 +1,32 @@
-# Матрица проверок LangGraph-стенда
+# Test matrix
 
-Строка читается так: **граница → ожидаемое правило → итог наблюдения**. Исходные наблюдения относятся к локальному прогону от 24 октября 2026 года. Как выбирали измерения, показано в [разборе пайплайна](PIPELINE.md). Три расхождения разобраны в [case study](CASE-STUDY.md#три-сбоя-стенда).
+[Back to the README](README.md) · [Pipeline](PIPELINE.md) · [Case study](CASE-STUDY.md) · [Results](evidence/results.json)
 
-| ID | Граница | Ожидаемое правило | Итог |
+Read a row from left to right: boundary, expected behavior, then the outcome and what was checked. A row describes a property and may cover several pytest cases. The 22 rows summarize the October 24, 2026 local run.
+
+| ID | Boundary | Expected behavior | Recorded outcome |
 | --- | --- | --- | --- |
-| B01 | Пользователь → чужой диалог | Чужой диалог нельзя читать, менять или удалять | `PASS`. Приложение отклонило доступ |
-| B02 | Один tenant → другой | Совпадение идентификатора пользователя не даёт доступа в другом tenant | `PASS`. Доступ разделён по tenant |
-| B03 | Один диалог → другой | История, состояние и удаление ограничены выбранным диалогом | `PASS`. Диалоги разделены |
-| B04 | Пользователь → хранилище заметок | Чтение, поиск и удаление остаются в пространстве пользователя | `PASS`. Пространство задаёт приложение |
-| B05 | Имя пространства → выбор заметки | Обычные разные имена пространства выбирают свои данные | `PASS`. Проверены три имени |
-| B06 | Диалоги одного пользователя → общие заметки | Пользователь может видеть свои общие заметки в разных диалогах | `PASS`. Разрешённый доступ сохранён |
-| B07 | Решение → продолжение workflow | Требуются владелец, право одобрять и совпадение с ожидающим действием | `PASS`. Проверки выполняет приложение |
-| B08 | Ввод решения → проверка типа | Некорректное значение отклоняется, исправленное можно подать | `PASS`. Сработала заданная схема |
-| B09 | Ожидание и отказ → выполнение | Пока нет одобрения, записи о выполнении нет | `PASS`. Запись не появилась |
-| B10 | Последовательный повтор решения → действие | Более позднее повторное одобрение не дублирует выполнение | `PASS`. Проверен последовательный сценарий |
-| B11 | Штатный перезапуск → состояние | Состояние графа, заметки и ожидающие одобрения сохраняются | `PASS`. Данные восстановились в новом процессе |
-| B12 | Заметки в памяти → новый процесс | Заметки в оперативной памяти исчезают, состояние на диске остаётся | `PASS`. Контроль различил два способа хранения |
-| B13 | Синхронный доступ → асинхронный доступ | Другой адаптер видит сохранённые заметки после открытия базы | `PASS`. Проверено в одном процессе |
-| B14 | Сбой → незавершённая транзакция | Незавершённая запись откатывается, ранее сохранённые данные остаются | `PASS`. Запись о выполнении отсутствовала |
-| B15 | Сбой → сохранённая транзакция | Одобрение и запись о выполнении сохраняются после фиксации | `PASS`. Проверено состояние базы |
-| B16 | Сбой → файлы SQLite | Ранее сохранённые данные читаются, проверки целостности проходят | `PASS`. Проверены заданные точки сбоя |
-| B17 | Откат → повтор | Повтор после отката завершает граф и создаёт одну запись | `PASS`. Один тестовый результат |
-| B18 | Итог в журнале → состояние графа | Завершённому действию соответствует завершённый граф | `FAIL`. Журнал показывает одобрение, граф всё ещё ждёт решения |
-| B19 | Два одобрения → запись в базе | Одно действие даёт максимум одну сохранённую запись | `PASS`. Уникальный ключ сохранил одну запись |
-| B20 | Два одобрения → попытки выполнения | Одно действие даёт максимум одну попытку выполнения | `FAIL`. Две попытки при одной записи |
-| B21 | Одобрение и отказ → итоговый журнал | Итоговый отказ не должен сосуществовать с записью о выполнении | `FAIL`. Итоговый отказ и запись остались вместе |
-| B22 | Разные действия → общие файлы | Каждое действие сохраняет свой итог и свою запись | `PASS`. Два действия проверены отдельно |
+| B01 | User → another user's thread | Only the owner may read, change, inspect history, or delete the thread. | Pass. The host denied nonowner access. |
+| B02 | Tenant → another tenant | A matching user ID in a different tenant grants no access. | Pass. Tenant scoping held. |
+| B03 | Thread → another thread | State, history, and deletion stay scoped to the selected thread. | Pass. Threads stayed separate. |
+| B04 | User → note store | Note reads, searches, and deletes stay scoped to the user. | Pass. The host selected the permitted namespace. |
+| B05 | Namespace → note lookup | Distinct test namespaces select their own data. | Pass for the three tested names. |
+| B06 | Same user's threads → shared notes | The same user can access their shared notes across threads. | Pass. Intended sharing worked. |
+| B07 | Decision → workflow resume | The caller must own the action, be allowed to approve, and present the matching action reference. | Pass. The host enforced the three checks. |
+| B08 | Decision input → schema | Invalid input is rejected. Corrected input is accepted. | Pass. The typed schema behaved as expected. |
+| B09 | Pending or denied action → execution | The ledger has zero execution records while pending and after ordinary denial. | Pass. Both scenarios had zero records. [Worked example](PIPELINE.md#2-write-the-rule-in-the-matrix) |
+| B10 | Sequential repeat → execution | A later approval of the same action adds no second execution. | Pass for the sequential check. |
+| B11 | Clean restart → saved state | A new process can recover checkpoints, notes, and pending decisions. | Pass. Saved state recovered. |
+| B12 | In-memory notes → new process | In-memory notes disappear. Persisted workflow state survives. | Pass. The two storage modes behaved as expected. |
+| B13 | Sync store → async store | The other adapter can read committed notes after reopening the database. | Pass within one process. |
+| B14 | Process interruption → open transaction | Uncommitted execution data rolls back. Previously saved data survives. | Pass at the tested checkpoint. |
+| B15 | Process interruption → committed transaction | Committed approval and its one execution record survive. | Pass at the tested checkpoint. |
+| B16 | Process interruption → SQLite files | Saved notes and checkpoints remain readable and integrity checks pass. | Pass at the tested points. |
+| B17 | Rollback → authorized retry | The retry completes the workflow and records one execution. | Pass. The retry left one record. |
+| B18 | Terminal ledger status → workflow checkpoint | A terminal ledger status corresponds to a terminal workflow. | **Fail.** The ledger was approved and the workflow remained pending. |
+| B19 | Overlapping approvals → saved record | At most one execution row is stored for the same action. | Pass. One row was saved. |
+| B20 | Overlapping approvals → execution attempt | At most one execution attempt occurs for the same action. | **Fail.** Two attempts and one row were observed. |
+| B21 | Conflicting decisions → final ledger | A denied action has no execution record. | **Fail.** Denial and an execution record coexisted. |
+| B22 | Different actions → shared storage | Each action retains its own decision and execution record. | Pass for the two tested actions. |
 
-Матрица описывает наблюдения в синтетическом приложении. Она не покрывает все расписания параллельного выполнения, сбои диска, распределённое исполнение и эффекты во внешних сервисах.
+[Read the three failed checks](CASE-STUDY.md#three-application-checks-that-failed).

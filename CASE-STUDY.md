@@ -1,46 +1,38 @@
-# Case study — проверки на стенде LangGraph
+# LangGraph integration case study
 
-Если читаешь впервые, начни с [пайплайна от задачи до отчёта](PIPELINE.md). Здесь показано, как проверяли сами проверки и как читали результаты тестового приложения.
+[Back to the README](README.md) · [Pipeline](PIPELINE.md) · [Matrix](MATRIX.md) · [Results](evidence/results.json)
 
-## Два отрицательных контроля
+The local application used synthetic users, a workflow that paused for human approval, and SQLite for checkpoints, notes, and the application ledger. A recorded execution was a dummy database row.
 
-В исходном `test_controls.py` есть два теста, которые подставляют заведомо неправильные данные. В обоих случаях код проверки остаётся тем же.
+## Checking the assertion
 
-| Что проверяем | Правильные данные | Намеренно неправильные данные | Что ожидал pytest |
-| --- | --- | --- | --- |
-| Диалоги Алисы и Боба разделены | У Алисы только запись A, у Боба только B | В тестовом словаре оба получили A и B | Проверка принимает первый словарь и выбрасывает `AssertionError` на втором |
-| До одобрения выполнение отсутствует | Пустой список записей | Список с одной фиктивной записью | Проверка принимает пустой список и выбрасывает `AssertionError` на втором |
+The suite included two negative controls. One used a synthetic mapping in which two users appeared to receive each other's fixture data. The other supplied a dummy execution record where the rule required an empty ledger. In each test, the assertion accepted the correct fixture and rejected the deliberately wrong fixture.
 
-В сохранённом JSON-отчёте эти тесты называются `test_calibration_oracle_detects_deliberately_wrong_fixture_result` и `test_calibration_oracle_detects_preapproval_dummy_effect`. Оба прошли.
-
-Вот сокращённый пример второго контроля. Все данные заданы прямо в тесте.
+Here is a shortened illustration of the second check using only in-memory data.
 
 ```python
 import pytest
 
 
-def test_oracle_rejects_unexpected_record():
-    def require_no_effect(records):
-        assert records == []
+def require_no_execution(records):
+    assert records == []
 
-    require_no_effect([])
+
+def test_assertion_rejects_an_unexpected_record():
+    require_no_execution([])
 
     with pytest.raises(AssertionError):
-        require_no_effect(["dummy-record"])
+        require_no_execution(["dummy-record"])
 ```
 
-`pytest.raises` означает «ожидаем ошибку внутри этого блока». Поэтому весь тест проходит, когда проверка отвергает специально испорченный список. Такой контроль показывает, что оракул различает эти два результата.
+The test passes when the second call raises the expected error. This is a negative control for the assertion. A mutation-testing score would require deliberate changes to the implementation and a separate test run.
 
-При **мутационном тестировании** намеренно меняют реализацию и смотрят, обнаружат ли это прежние тесты. В этом прогоне менялись только входные данные двух проверок оракула. Варианты реализации LangGraph или приложения отдельно не прогоняли. Число 70 из 73 относится к обычному набору тестов.
+## Three application checks that failed
 
-## Три сбоя стенда
-
-Эти результаты получены при проверке логики тестового приложения. Здесь `FAIL` означает, что наблюдение разошлось с правилом из [матрицы](MATRIX.md).
-
-| Строка | Ожидали | Наблюдали | Почему важно |
+| Matrix row | Expected | Observed | What to check in a fix |
 | --- | --- | --- | --- |
-| B18 | Завершённому действию соответствует завершённый граф | Журнал показывает одобрение и одну запись о выполнении. Граф ещё ждёт решения | При восстановлении приложение должно сверять статус в журнале и состояние графа |
-| B20 | Для одного действия максимум одна попытка выполнения | Две попытки, одна сохранённая запись | Уникальный ключ сохраняет одну запись. Ограничение числа попыток требует своей проверки |
-| B21 | При итоговом отказе записи о выполнении нет | Итоговый статус `denied`, запись о выполнении осталась | Журнал может сообщать отказ, когда действие уже записано как выполненное |
+| B18 | A terminal ledger status agrees with the workflow checkpoint | The ledger had one execution record and an approved status. The workflow still showed a pending decision. | Verify reconciliation after a restart. |
+| B20 | A single action enters execution at most once | Two execution attempts were counted and one row was saved. | Check attempt count as well as row count. |
+| B21 | A denied action has zero execution records | The final status was denied and an execution record remained. | Verify that the decision and execution record agree. |
 
-Все три сбоя относятся к локальному приложению с синтетическими пользователями. Полный прогон дал **70 `PASS` и 3 `FAIL`**, а отдельный повтор девяти случаев — **6 `PASS` и 3 `FAIL`**. Внешние действия и реальную аутентификацию этот эксперимент не проверял.
+The October 24, 2026 full run recorded **70 passes and 3 failures**. A repeat of nine cases recorded **6 passes and the same 3 failures**. The failures describe application guarantees in this synthetic integration. The experiment measured local state and did not exercise live users or external tools. [Recorded results](evidence/results.json)

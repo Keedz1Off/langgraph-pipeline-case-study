@@ -1,0 +1,73 @@
+{
+  "recorded_date": "2026-10-24",
+  "environment": "Local synthetic LangGraph application, Windows 11, Python 3.12.10",
+  "scope": "Totals and selected case outcomes extracted from the original pytest run reports.",
+  "runs": [
+    {
+      "name": "full suite",
+      "run_id": "98af26d567de48a59bbc7c06e0095824",
+      "total": 73,
+      "passed": 70,
+      "failed": 3,
+      "errors": 0,
+      "skipped": 0,
+      "selected_cases": [
+        {
+          "name": "test_pending_approval_has_no_effect[sqlite]",
+          "status": "passed"
+        },
+        {
+          "name": "test_denial_has_no_effect[sqlite]",
+          "status": "passed"
+        },
+        {
+          "name": "test_valid_approval_records_one_dummy_effect[sqlite]",
+          "status": "passed"
+        },
+        {
+          "name": "test_calibration_oracle_detects_deliberately_wrong_fixture_result",
+          "status": "passed"
+        },
+        {
+          "name": "test_calibration_oracle_detects_preapproval_dummy_effect",
+          "status": "passed"
+        },
+        {
+          "name": "test_terminal_host_status_has_terminal_graph_after_crash",
+          "status": "failed"
+        },
+        {
+          "name": "test_overlapping_approvals_attempt_effect_only_once",
+          "status": "failed"
+        },
+        {
+          "name": "test_overlapping_opposite_decisions_keep_ledger_consistent",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "name": "nine-case repeat",
+      "run_id": "3df4b8feae1b41b59a241f9e64007606",
+      "total": 9,
+      "passed": 6,
+      "failed": 3,
+      "errors": 0,
+      "skipped": 0,
+      "selected_cases": [
+        {
+          "name": "test_terminal_host_status_has_terminal_graph_after_crash",
+          "status": "failed"
+        },
+        {
+          "name": "test_overlapping_approvals_attempt_effect_only_once",
+          "status": "failed"
+        },
+        {
+          "name": "test_overlapping_opposite_decisions_keep_ledger_consistent",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

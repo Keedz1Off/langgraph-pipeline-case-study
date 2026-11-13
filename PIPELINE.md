@@ -1,63 +1,47 @@
-# Пайплайн проверок от задачи до отчёта
+# Testing pipeline
 
-Пока действие ожидает одобрения, записи о его выполнении быть не должно. На этом правиле видно, как устроен весь пайплайн.
+[Back to the README](README.md) · [Case study](CASE-STUDY.md) · [Matrix](MATRIX.md) · [Results](evidence/results.json)
+
+This example follows one rule throughout the pipeline: a pending or denied action must leave no execution record.
 
 ```text
-Устройство приложения → правило в матрице → сценарий на Python
-→ проверка результата → отчёт pytest → JSON с наблюдениями → вывод
+Application flow → invariant → test scenario → assertion → pytest result → report
 ```
 
-## 1. Понимаем, кто за что отвечает
+## 1. Map the application
 
-На стенде пользователь работает с диалогом и заметками. Некоторые действия нужно одобрить. Тестовое приложение решает, кто вправе читать данные и принимать решение. LangGraph управляет ходом выполнения и сохраняет состояние графа, чтобы тот мог остановиться и продолжиться позднее.
+A user requests an action, the LangGraph workflow pauses for a decision, and the application handles the decision. The application checks who can resume the action. LangGraph checkpoints preserve workflow state. The application records approval status and synthetic executions in a separate SQLite ledger. Notes live in their own store.
 
-| Часть стенда | Что хранит или делает |
+These boundaries determine where to look for evidence. The checkpoint says whether the workflow is waiting. The ledger says whether the application recorded execution. A check that depends on both reads both.
+
+## 2. Write the rule in the matrix
+
+In [B09](MATRIX.md), the application must leave the execution ledger empty while the action is pending and after an ordinary denial. The matrix records the boundary, the expected behavior, the relevant test or observation, and the recorded outcome.
+
+## 3. Turn the rule into test scenarios
+
+| Scenario | Expected observation |
 | --- | --- |
-| Python-приложение | Проверяет владельца диалога и право одобрить действие |
-| Контрольные точки LangGraph | Хранят состояние графа и шаг, на котором он остановился |
-| Хранилище заметок SQLite | Хранит заметки пользователя |
-| Журнал приложения SQLite | Хранит статус одобрения и тестовые записи о выполнении |
+| An action is awaiting a decision | Zero execution records |
+| The owner denies the action | Zero execution records |
+| An authorized owner approves the action | One execution record |
 
-Для проверки одобрения нужны два наблюдения: где остановился граф и есть ли запись о выполнении. Эти данные лежат в разных хранилищах.
+The approval case shows that the application can actually execute the test action. Together, the three cases distinguish an approval gate from an implementation that always leaves the ledger empty.
 
-## 2. Записываем правило в матрицу
+## 4. Decide what counts as a pass
 
-Выбираем границу — переход от решения пользователя к выполнению действия. Формулируем **инвариант**, то есть правило с однозначным ожидаемым результатом. Для строки **B09** пока действие ожидает одобрения или отклонено, записей о его выполнении должно быть ноль. [Строки матрицы](MATRIX.md)
+The test observes the execution records and compares them with the expected count. This assertion is the *test oracle*. A second observation can matter in a different scenario. B20, for example, tracks execution attempts, while B19 tracks persisted rows. A unique row can coexist with two attempts.
 
-## 3. Превращаем правило в сценарии
+## 5. Check the assertion itself
 
-Один тест проверяет состояние в ожидании одобрения. Другой проверяет итог после отказа. Отдельный положительный сценарий с разрешённым одобрением показывает, что стенд умеет выполнять действие. Без положительного сценария приложение, которое никогда ничего не выполняет, могло бы пройти обе проверки запрета.
+In an isolated test, the same assertion is given an empty list and a list containing a dummy record. The empty list is accepted. The dummy record must trigger an assertion failure. pytest marks that test as passed when the expected assertion failure occurs. [See the example](CASE-STUDY.md#checking-the-assertion).
 
-Сценарии написаны на Python. В них используется контролируемое состояние, тестовые пользователи и локальная база. **pytest** запускает функции тестов и отмечает, прошла ли каждая проверка.
+## 6. Run and report
 
-## 4. Выбираем, что измерять
+Python contains the test scenarios and assertions. pytest runs the cases and produces a JUnit XML report. The original runner reads that report and records case outcomes and selected observations in JSON. The [results extract](evidence/results.json) in this repository preserves the totals for each run and the outcomes cited in the case study.
 
-**Оракул** — правило, по которому тест решает, прошла проверка или упала. Для B09 он смотрит список записей о выполнении и ожидает пустой список. Для других строк матрицы тест читает состояние графа, проверяет ожидаемую ошибку или сравнивает несколько наблюдений.
+In this pipeline, JSON stores output. The scenario logic lives in Python. A CI workflow could invoke pytest and archive the reports. The results documented here came from local runs.
 
-В B20 важно считать и попытки выполнения, и строки в базе. Одна строка подтверждает число сохранённых записей. Количество попыток показывает отдельное измерение.
+## 7. Interpret failures against the rule
 
-## 5. Проверяем, что оракул замечает ошибку
-
-Подставляем два известных ответа: правильный и намеренно неправильный. Для B09 это пустой список и список с одной фиктивной записью. Оракул должен принять первый и отвергнуть второй. Тест с неправильными данными при этом сам получает `PASS`, поскольку ожидаемое отклонение произошло. [Два примера из стенда](CASE-STUDY.md#два-отрицательных-контроля)
-
-## 6. Запускаем тесты и сохраняем результаты
-
-В исходном пакете `langgraph-resilience-2026-10-24` скрипт запускает pytest и читает отчёт JUnit XML, где записан статус каждого случая. Затем скрипт формирует `results.json`. Сохранённые результаты и наблюдения используются при подготовке отчёта.
-
-| Где смотреть в исходном пакете стенда | Что там находится |
-| --- | --- |
-| `lab/test_controls.py` | Проверки доступа, одобрения и два отрицательных контроля |
-| `lab/test_persistence.py` | Проверки сохранения состояния и штатного перезапуска |
-| `lab/test_resilience.py` | Проверки восстановления после сбоя и параллельных решений |
-| `lab/run_resilience.py` | Запуск набора и проверка отчёта pytest |
-| `evidence/resilience-results.json` | Результаты тестов и сохранённые наблюдения проверенного прогона |
-| `evidence/resilience-repeat.json` | Результаты отдельного повторного прогона девяти случаев |
-| `BOUNDARY-MATRIX.md` и `RESILIENCE.md` | Связь между правилами, тестами и итоговым выводом |
-
-В этом стенде **Python** выполняет сценарии и проверки, **pytest** запускает тесты, **JSON** хранит результаты для чтения программой, а **Markdown** объясняет их человеку. Сценарии pytest уже заданы в Python. В проекте с YAML-сценариями раннер сначала читает файл с параметрами проверки.
-
-## 7. Формулируем вывод
-
-В полном прогоне было **73 тестовых случая, 70 прошли и 3 упали**. Матрица содержит **22 свойства**, каждое из которых может покрываться несколькими тестами. Отдельный повтор девяти случаев дал те же шесть успешных проверок и три сбоя. Повтор подтверждает, что результат наблюдался снова, и учитывается отдельно от охвата полного прогона.
-
-Для упавшего теста в отчёте указываем ожидаемое правило, фактическое наблюдение, ответственную часть приложения и предел вывода. В этом стенде тестовое действие — запись в SQLite. Результат говорит о состоянии этого приложения и его базы. [Разбор трёх сбоев](CASE-STUDY.md#три-сбоя-стенда)
+For each failure, record the expected behavior, the observed state, and which component owns the rule. For example, B18 checks whether a terminal ledger status agrees with the workflow checkpoint. The two states differed in the local run, which identifies an application consistency issue. [Read the failure analysis](CASE-STUDY.md#three-application-checks-that-failed).
