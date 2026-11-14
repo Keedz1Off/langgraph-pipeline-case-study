@@ -4,6 +4,20 @@ A local Python application uses LangGraph to save conversation state and pause a
 
 [Application architecture](#application-architecture) · [Testing pipeline](#testing-pipeline) · [Results and reading order](#results-and-reading-order)
 
+## Boundaries, tests and evidence
+
+Read the [22 boundaries in JSON](matrices/boundaries.json) or [as a table](MATRIX.md). [Local application](lab/local_host.py), [control tests](lab/test_controls.py), and [persistence tests](lab/test_persistence.py) are included with their [setup guide](lab/README.md). [Historical results](evidence/results.json) also include the resilience checks from the larger October run.
+
+For B09, find `test_pending_approval_has_no_effect`, `test_denial_has_no_effect`, and `test_valid_approval_records_one_dummy_effect` in the control tests. Each checks the count of synthetic execution records in SQLite.
+
+Run the offline evidence checks from the repository root with Python 3.10 or later.
+
+```sh
+python -B -m unittest discover -s tests -v
+```
+
+These checks read saved files and do not launch the assessed application.
+
 ## Application architecture
 
 ```mermaid
@@ -61,7 +75,7 @@ flowchart TD
 | Owner denies the action | Zero execution rows |
 | Authorized owner approves the action | One execution row |
 
-pytest writes each case outcome to JUnit XML. The local runner reads the XML and combines those outcomes with selected observations in JSON. This repo includes an extract of the recorded results and the documents that explain them. The original application and test runner are needed to rerun the suite. [Recorded results](evidence/results.json)
+pytest writes each case outcome to JUnit XML. The local runner reads the XML and combines those outcomes with selected observations in JSON. This repo includes an extract of the recorded results and the documents that explain them. The repository includes the local control and persistence suites. The larger historical run also included separate resilience checks. [Recorded results](evidence/results.json)
 
 ## Results and reading order
 

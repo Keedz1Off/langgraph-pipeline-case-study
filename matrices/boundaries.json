@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "B01",
+      "boundary": "User → another user's thread",
+      "invariant": "Only the owner may read, change, inspect history, or delete the thread.",
+      "recorded_outcome": "Pass. The host denied nonowner access.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B02",
+      "boundary": "Tenant → another tenant",
+      "invariant": "A matching user ID in a different tenant grants no access.",
+      "recorded_outcome": "Pass. Tenant scoping held.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B03",
+      "boundary": "Thread → another thread",
+      "invariant": "State, history, and deletion stay scoped to the selected thread.",
+      "recorded_outcome": "Pass. Threads stayed separate.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B04",
+      "boundary": "User → note store",
+      "invariant": "Note reads, searches, and deletes stay scoped to the user.",
+      "recorded_outcome": "Pass. The host selected the permitted namespace.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B05",
+      "boundary": "Namespace → note lookup",
+      "invariant": "Distinct test namespaces select their own data.",
+      "recorded_outcome": "Pass for the three tested names.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B06",
+      "boundary": "Same user's threads → shared notes",
+      "invariant": "The same user can access their shared notes across threads.",
+      "recorded_outcome": "Pass. Intended sharing worked.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B07",
+      "boundary": "Decision → workflow resume",
+      "invariant": "The caller must own the action, be allowed to approve, and present the matching action reference.",
+      "recorded_outcome": "Pass. The host enforced the three checks.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B08",
+      "boundary": "Decision input → schema",
+      "invariant": "Invalid input is rejected. Corrected input is accepted.",
+      "recorded_outcome": "Pass. The typed schema behaved as expected.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B09",
+      "boundary": "Pending or denied action → execution",
+      "invariant": "The ledger has zero execution records while pending and after ordinary denial.",
+      "recorded_outcome": "Pass. Both scenarios had zero records.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ],
+      "test_names": [
+        "test_pending_approval_has_no_effect",
+        "test_denial_has_no_effect",
+        "test_valid_approval_records_one_dummy_effect"
+      ],
+      "test_file": "lab/test_controls.py"
+    },
+    {
+      "id": "B10",
+      "boundary": "Sequential repeat → execution",
+      "invariant": "A later approval of the same action adds no second execution.",
+      "recorded_outcome": "Pass for the sequential check.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B11",
+      "boundary": "Clean restart → saved state",
+      "invariant": "A new process can recover checkpoints, notes, and pending decisions.",
+      "recorded_outcome": "Pass. Saved state recovered.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B12",
+      "boundary": "In-memory notes → new process",
+      "invariant": "In-memory notes disappear. Persisted workflow state survives.",
+      "recorded_outcome": "Pass. The two storage modes behaved as expected.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B13",
+      "boundary": "Sync store → async store",
+      "invariant": "The other adapter can read committed notes after reopening the database.",
+      "recorded_outcome": "Pass within one process.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B14",
+      "boundary": "Process interruption → open transaction",
+      "invariant": "Uncommitted execution data rolls back. Previously saved data survives.",
+      "recorded_outcome": "Pass at the tested checkpoint.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B15",
+      "boundary": "Process interruption → committed transaction",
+      "invariant": "Committed approval and its one execution record survive.",
+      "recorded_outcome": "Pass at the tested checkpoint.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B16",
+      "boundary": "Process interruption → SQLite files",
+      "invariant": "Saved notes and checkpoints remain readable and integrity checks pass.",
+      "recorded_outcome": "Pass at the tested points.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B17",
+      "boundary": "Rollback → authorized retry",
+      "invariant": "The retry completes the workflow and records one execution.",
+      "recorded_outcome": "Pass. The retry left one record.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B18",
+      "boundary": "Terminal ledger status → workflow checkpoint",
+      "invariant": "A terminal ledger status corresponds to a terminal workflow.",
+      "recorded_outcome": "**Fail.** The ledger was approved and the workflow remained pending.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B19",
+      "boundary": "Overlapping approvals → saved record",
+      "invariant": "At most one execution row is stored for the same action.",
+      "recorded_outcome": "Pass. One row was saved.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B20",
+      "boundary": "Overlapping approvals → execution attempt",
+      "invariant": "At most one execution attempt occurs for the same action.",
+      "recorded_outcome": "**Fail.** Two attempts and one row were observed.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B21",
+      "boundary": "Conflicting decisions → final ledger",
+      "invariant": "A denied action has no execution record.",
+      "recorded_outcome": "**Fail.** Denial and an execution record coexisted.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    },
+    {
+      "id": "B22",
+      "boundary": "Different actions → shared storage",
+      "invariant": "Each action retains its own decision and execution record.",
+      "recorded_outcome": "Pass for the two tested actions.",
+      "evidence": [
+        {
+          "file": "evidence/results.json"
+        }
+      ]
+    }
+  ]
+}
