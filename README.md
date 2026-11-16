@@ -50,6 +50,9 @@ For an action, the host marks it pending and starts the approval graph. The grap
 
 ## Testing pipeline
 
+<img width="1280" height="853" alt="image" src="https://github.com/user-attachments/assets/a19a694d-ca0f-4ffa-afba-c9d4dab04c53" />
+
+
 ```mermaid
 flowchart TD
     Boundary["Map an application boundary"]
