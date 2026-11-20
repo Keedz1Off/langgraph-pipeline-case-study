@@ -4,7 +4,7 @@
 
 This example follows one rule throughout the pipeline: a pending or denied action must leave no execution record.
 
-![Local LangGraph tests, current GitHub Actions and planned update automation](assets/langgraph-testing-pipeline.png)
+[Open the diagrams in the README](README.md#testing-pipeline) for the local tests, current CI and planned update automation.
 
 ```text
 Application flow → invariant → test scenario → assertion → pytest result → report
@@ -34,7 +34,7 @@ The current automation covers the matrix index, recorded evidence and result pac
 
 ## Update automation design (planned)
 
-The dashed part of the illustration describes how the pipeline would react to application changes. These stages still require implementation in the runner and workflow.
+The [planned update flow](README.md#planned-update-automation) describes how the pipeline would react to application changes. These stages still require implementation in the runner and workflow.
 
 | Stage | Intended behavior | LangGraph example |
 | --- | --- | --- |

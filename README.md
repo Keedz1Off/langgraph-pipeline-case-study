@@ -26,22 +26,6 @@ Run the offline evidence checks from the repository root with Python 3.10 or lat
 python -B -m unittest discover -s tests -v
 ```
 
-## GitHub Actions
-
-Open [Case study checks](https://github.com/Keedz1Off/langgraph-pipeline-case-study/actions/workflows/checks.yml) and click **Run workflow**. CI reads the matrix JSON and checks the saved evidence offline. The run saves a `check-results` log. Select **CD demo** to also download `verified-delivery` with the log, commit SHA and checksum after checks pass.
-
-### What happens in Actions
-
-| Step | What it does |
-| --- | --- |
-| Checkout and Python | GitHub runs the selected commit on Ubuntu with Python 3.12. |
-| Matrix JSON | CI requires the boundary index and reads every JSON file in the matrices folder. |
-| Evidence tests | Two tests match the matrix to its documented rows and reconcile the full and repeat run counts. |
-| Check log | CI uploads the result as `check-results`. |
-| CD demo | After a passing manual run, CI saves the log, commit SHA and SHA-256 checksum as `verified-delivery`. |
-
-[See the workflow file](.github/workflows/checks.yml). This job checks the material shipped in this repository offline.
-
 ## Application architecture
 
 ```mermaid
@@ -74,9 +58,7 @@ For an action, the host marks it pending and starts the approval graph. The grap
 
 ## Testing pipeline
 
-![LangGraph pipeline showing local approval tests, current evidence CI and planned update automation](assets/langgraph-testing-pipeline.png)
-
-The upper section follows local LangGraph tests and the SQLite observations they check. The middle section shows the current GitHub Actions job. The dashed section shows the [planned update automation](PIPELINE.md#update-automation-design-planned), including file bindings, affected matrices and mutation checks.
+The local assessment follows a rule from the matrix through Python scenarios and SQLite observations. The [GitHub Actions flow](#ci-flow) shows the evidence checks that run on the current repository.
 
 ```mermaid
 flowchart TD
@@ -104,6 +86,53 @@ flowchart TD
 | Authorized owner approves the action | One execution row |
 
 pytest writes each case outcome to JUnit XML. The local runner reads the XML and combines those outcomes with selected observations in JSON. This repo includes an extract of the recorded results and the documents that explain them. The repository includes the local control and persistence suites. The larger historical run also included separate resilience checks. [Recorded results](evidence/results.json)
+
+## GitHub Actions
+
+Open [Case study checks](https://github.com/Keedz1Off/langgraph-pipeline-case-study/actions/workflows/checks.yml) and click **Run workflow**. CI reads the matrix JSON and checks the saved evidence offline. The run saves a `check-results` log. Select **CD demo** to also download `verified-delivery` with the log, commit SHA and checksum after checks pass.
+
+### CI flow
+
+```mermaid
+flowchart TD
+    Trigger["Push, pull request or Run workflow"] --> Setup["Checkout commit and prepare Python"]
+    Setup --> Input["Read matrix JSON"]
+    Input --> Check["Check boundary rows and saved run counts"]
+    Check --> Log["Save check-results log"]
+    Check --> Result{"Checks passed?"}
+    Result -->|No| Fail["CI failed"]
+    Result -->|Yes| Pass["CI passed"]
+    Pass -->|"Manual run with CD demo enabled"| Bundle["Archive log, commit and checksum"]
+    Bundle --> Delivery["Save verified-delivery artifact"]
+```
+
+### What happens in Actions
+
+| Step | What it does |
+| --- | --- |
+| Checkout and Python | GitHub runs the selected commit on Ubuntu with Python 3.12. |
+| Matrix JSON | CI requires the boundary index and reads every JSON file in the matrices folder. |
+| Evidence tests | Two tests match the matrix to its documented rows and reconcile the full and repeat run counts. |
+| Check log | CI uploads the result as `check-results`. |
+| CD demo | After a passing manual run, CI saves the log, commit SHA and SHA-256 checksum as `verified-delivery`. |
+
+[See the workflow file](.github/workflows/checks.yml). This job checks the material shipped in this repository offline.
+
+## Planned update automation
+
+This design describes the next stage of automation. The catalog-based selector and automatic mutation runner still require implementation.
+
+```mermaid
+flowchart TD
+    Catalog["Catalog links files and functions to matrix rows"] -.-> Inventory["Check file and code-block inventory"]
+    Inventory -.-> Selection["Select matrices affected by the change"]
+    Selection -.-> Scenarios["Run their mapped Python scenarios"]
+    Scenarios -.-> Oracle["Inspect results and SQLite state"]
+    Oracle -.-> Report["Save selected cases, observations and outcomes"]
+    Mutations["Isolated controlled mutations"] -.-> Calibration["Check that the matching oracle detects the change"]
+```
+
+[Read what each planned stage would do](PIPELINE.md#update-automation-design-planned). The working CI currently parses matrix JSON and checks saved evidence as described above.
 
 ## Results and reading order
 
