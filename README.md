@@ -2,7 +2,7 @@
 
 A local Python application uses LangGraph to save conversation state and pause actions for approval. This case study checks access controls, approval rules, and recovery behavior with synthetic users and SQLite. The recorded run had **70 passes and 3 failures across 73 cases**.
 
-[Application architecture](#application-architecture) · [Testing pipeline](#testing-pipeline) · [Results and reading order](#results-and-reading-order)
+[Application architecture](#application-architecture) · [Testing pipeline](#testing-pipeline) · [Pipeline update](PIPELINE.md#github-actions-update) · [Results and reading order](#results-and-reading-order)
 
 ## Where to start
 
@@ -12,6 +12,7 @@ A local Python application uses LangGraph to save conversation state and pause a
 | [Testing pipeline](#testing-pipeline) · [Worked example](CASE-STUDY.md) | Follow an approval rule from its test to the saved result. |
 | [Matrix](MATRIX.md) · [Recorded results](evidence/results.json) | Find the tested properties, individual outcomes and the three measured failures. |
 | [Local lab](lab/README.md) · [GitHub Actions](#github-actions) | Choose between the local runtime suite and the checks on the saved evidence. |
+| [Pipeline update](PIPELINE.md#github-actions-update) | See the added CI stages, output artifacts and remaining automation work. |
 
 ## Boundaries, tests and evidence
 

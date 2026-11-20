@@ -8,6 +8,30 @@ This example follows one rule throughout the pipeline: a pending or denied actio
 Application flow → invariant → test scenario → assertion → pytest result → report
 ```
 
+## GitHub Actions update
+
+The added [workflow](.github/workflows/checks.yml) runs the repository's evidence checks on pushes and pull requests to `main`. It also supports a manual run through [Actions → Case study checks → Run workflow](https://github.com/Keedz1Off/langgraph-pipeline-case-study/actions/workflows/checks.yml).
+
+```text
+Push, pull request or manual run → read matrix JSON → check recorded evidence → save check log
+Manual run with CD demo enabled → passing checks → package verified results
+```
+
+| Stage | What happens in this repository |
+| --- | --- |
+| Prepare the runner | GitHub checks out the selected revision on Ubuntu and installs Python 3.12. |
+| Read the matrix | The job requires `matrices/boundaries.json` and parses every JSON file in `matrices/`. The current file contains 22 boundary rows. |
+| Check the boundary index | One offline test checks that the 22 IDs and their boundary and invariant text match `MATRIX.md`. |
+| Check recorded outcomes | A second offline test reconciles the saved totals and checks that the full run and repeat run contain the same three recorded failures. |
+| Save the log | Actions uploads the check output as the `check-results` artifact, including output from a failed check. |
+| Package the optional CD demo | After a successful manual run with **CD demo** enabled, Actions uploads `verified-delivery` with the check log archive, commit SHA and SHA-256 checksum. |
+
+The case study's 73 runtime cases and their 70-pass, 3-failure result came from the local assessment. Actions executes the two offline tests in [tests/test_recorded_evidence.py](tests/test_recorded_evidence.py). The [local lab guide](lab/README.md) provides the separate runtime test commands.
+
+The current automation covers the matrix index, recorded evidence and result packaging. Automatic file-to-boundary bindings, changed-block selection and mutation runs remain pending. The optional CD demo produces a downloadable archive.
+
+The following sections explain how the local assessment follows an application rule through scenarios, observations and the report.
+
 ## 1. Map the application
 
 A user requests an action, the LangGraph workflow pauses for a decision, and the application handles the decision. The application checks who can resume the action. LangGraph checkpoints preserve workflow state. The application records approval status and synthetic executions in a separate SQLite ledger. Notes live in their own store.
@@ -40,7 +64,7 @@ In an isolated test, the same assertion is given an empty list and a list contai
 
 Python contains the test scenarios and assertions. pytest runs the cases and produces a JUnit XML report. The original runner reads that report and records case outcomes and selected observations in JSON. The [results extract](evidence/results.json) in this repository preserves the totals for each run and the outcomes cited in the case study.
 
-In this pipeline, JSON stores output. The scenario logic lives in Python. A CI workflow could invoke pytest and archive the reports. The results documented here came from local runs.
+The boundary index in `matrices/boundaries.json` records the rules, and `evidence/results.json` stores recorded outcomes. The scenario logic lives in Python. The results documented here came from local runs. GitHub Actions checks the index and those saved outcomes as described in the [pipeline update](#github-actions-update).
 
 ## 7. Interpret failures against the rule
 
