@@ -4,6 +4,8 @@
 
 This example follows one rule throughout the pipeline: a pending or denied action must leave no execution record.
 
+![Local LangGraph tests, current GitHub Actions and planned update automation](assets/langgraph-testing-pipeline.png)
+
 ```text
 Application flow → invariant → test scenario → assertion → pytest result → report
 ```
@@ -29,6 +31,21 @@ Manual run with CD demo enabled → passing checks → package verified results
 The case study's 73 runtime cases and their 70-pass, 3-failure result came from the local assessment. Actions executes the two offline tests in [tests/test_recorded_evidence.py](tests/test_recorded_evidence.py). The [local lab guide](lab/README.md) provides the separate runtime test commands.
 
 The current automation covers the matrix index, recorded evidence and result packaging. Automatic file-to-boundary bindings, changed-block selection and mutation runs remain pending. The optional CD demo produces a downloadable archive.
+
+## Update automation design (planned)
+
+The dashed part of the illustration describes how the pipeline would react to application changes. These stages still require implementation in the runner and workflow.
+
+| Stage | Intended behavior | LangGraph example |
+| --- | --- | --- |
+| Catalog and bindings | Record which application files and functions each matrix row covers, and which Python scenarios check it. | Bind the approval methods in `lab/local_host.py` to B07, B08 and B09 and their tests. |
+| Check files and code blocks | Compare the current application inventory with the recorded bindings. A new unbound file or function would stop the run until its rule and tests are recorded. | A newly added approval method would need an explicit boundary binding. |
+| Select affected matrices | Use changed files and functions to choose the relevant rules. Shared setup or dependency changes would select the full suite. | A change to `LocalHost.decide` would select approval checks. |
+| Run selected scenarios | Execute the mapped Python tests against the local application. Each oracle would inspect the result and relevant SQLite state. | Pending and denied actions should leave zero execution rows. An authorized approval should leave one. |
+| Save the report | Record the source revision, detected changes, selected boundaries and tests, observations and outcomes. | The report would show why B09 was selected and its observed execution-row count. |
+| Mutation checks | Run isolated, controlled changes to observations or behavior to confirm that the corresponding oracle detects a violation. | Give the zero-execution oracle an unexpected dummy row and confirm it rejects the observation. |
+
+The [existing assertion example](CASE-STUDY.md#checking-the-assertion) explains the last idea. An automatic mutation runner and the catalog-based selection system remain future work.
 
 The following sections explain how the local assessment follows an application rule through scenarios, observations and the report.
 

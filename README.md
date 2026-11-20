@@ -74,8 +74,9 @@ For an action, the host marks it pending and starts the approval graph. The grap
 
 ## Testing pipeline
 
-<img width="1280" height="853" alt="image" src="https://github.com/user-attachments/assets/a19a694d-ca0f-4ffa-afba-c9d4dab04c53" />
+![LangGraph pipeline showing local approval tests, current evidence CI and planned update automation](assets/langgraph-testing-pipeline.png)
 
+The upper section follows local LangGraph tests and the SQLite observations they check. The middle section shows the current GitHub Actions job. The dashed section shows the [planned update automation](PIPELINE.md#update-automation-design-planned), including file bindings, affected matrices and mutation checks.
 
 ```mermaid
 flowchart TD
